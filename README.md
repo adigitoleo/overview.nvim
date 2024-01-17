@@ -7,7 +7,7 @@ contents from markup buffers and presents it in an unintrusive floating window.
 The floating overview can also be used to navigate the open buffer.
 
 Filetype support:
-- [x] `markdown`
+- [x] `markdown` (no setext headers yet)
 - [ ] `man`
 - [ ] `tex`
 - [ ] `help` (this is a `buftype`, not a `filetype`)

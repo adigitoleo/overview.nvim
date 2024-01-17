@@ -6,7 +6,7 @@ Overview.config = {
     window = {
         location = "right", -- or "left"
         width = 32,
-        wrap = true,        -- text wap for long section titles
+        wrap = true,        -- text wrap for long section titles
         list = false,       -- show listchars in the floating window (BROKEN?)
         winblend = 25,      -- transparency setting
         zindex = 21,        -- floating window 'priority'
@@ -112,10 +112,8 @@ end
 -- Delete autocommands and augroup.
 local function delete_autocommands() api.nvim_del_augroup_by_name(Overview.config.refresh.augroup) end
 
--- Create new or focus existing TOC window.
-local function show(buf, win)
-    -- buf: handle to possibly existing buffer
-    -- win: handle to possibly existing window
+-- Create new TOC sidebar window or focus existing one.
+local function create_sidebar(buf, win)
     local wc = vim.o.columns
     local width = Overview.config.window.width
     if width - 2 > wc then
@@ -175,7 +173,7 @@ function Overview.open()
     end
     Overview.state.parser = parser
     Overview.state.sbuf = api.nvim_win_get_buf(0)
-    Overview.state.obuf, Overview.state.owin = show(Overview.state.obuf, Overview.state.owin)
+    Overview.state.obuf, Overview.state.owin = create_sidebar(Overview.state.obuf, Overview.state.owin)
     draw()
 end
 
@@ -190,7 +188,7 @@ function Overview.swap()
     end
 end
 
--- Close possibly existing TOC.
+-- Close possibly existing TOC sidebar.
 function Overview.close()
     if api.nvim_win_is_valid(Overview.state.owin) then
         api.nvim_win_close(Overview.state.owin, true)
