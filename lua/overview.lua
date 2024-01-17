@@ -147,6 +147,25 @@ local function show(buf, win)
     return buf, win
 end
 
+-- Toggle TOC sidebar for current filetype, if supported.
+function Overview.toggle()
+    if api.nvim_win_is_valid(Overview.state.owin) then
+        Overview.close()
+    else
+        Overview.open()
+    end
+end
+
+-- Toggle TOC sidebar focus, if open.
+function Overview.focus()
+    if not api.nvim_win_is_valid(Overview.state.owin) then return end
+    if vim.fn.win_getid() == Overview.state.owin then
+        api.nvim_set_current_win(vim.fn.bufwinid(api.nvim_buf_get_name(Overview.state.sbuf)))
+    else
+        api.nvim_set_current_win(Overview.state.owin)
+    end
+end
+
 -- Open new TOC for current buftype, if supported.
 function Overview.open()
     parser = get_parser()
