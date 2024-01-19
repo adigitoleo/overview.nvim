@@ -76,10 +76,6 @@ local function draw()
     local content = table.concat(api.nvim_buf_get_lines(Overview.state.sbuf, 0, -1, true), "\n")
     local headings = Overview.state.parser(content)
     store_anchors(headings)
-    opts = { desc = "Jump to anchor in source buffer", range = true }
-    api.nvim_buf_create_user_command(Overview.state.obuf, "Jump", jump, opts)
-    opts.range = nil
-    api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<Cr>]], [[<Cmd>Jump<Cr>]], opts)
     api.nvim_buf_set_lines(Overview.state.obuf, 0, -1, true, decorate_headings(headings))
     api.nvim_buf_set_option(Overview.state.obuf, "modifiable", false)
 end
@@ -139,6 +135,11 @@ local function create_sidebar(buf, win)
         api.nvim_win_set_option(win, "winblend", Overview.config.window.winblend)
         api.nvim_win_set_option(win, "wrap", Overview.config.window.wrap)
         api.nvim_win_set_option(win, "list", Overview.config.window.list)
+        opts = { desc = "Jump to anchor in source buffer", range = true }
+        api.nvim_buf_create_user_command(Overview.state.obuf, "Jump", jump, opts)
+        opts.range = nil
+        api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<Cr>]], [[<Cmd>Jump<Cr>]], opts)
+        api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<LeftMouse>]], [[<Cmd>Jump<Cr>]], opts)
     else
         api.nvim_set_current_win(win)
     end
