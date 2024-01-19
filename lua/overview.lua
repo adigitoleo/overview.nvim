@@ -170,7 +170,13 @@ end
 function Overview.focus()
     if not api.nvim_win_is_valid(Overview.state.owin) then return end
     if vim.fn.win_getid() == Overview.state.owin then
-        api.nvim_set_current_win(vim.fn.bufwinid(api.nvim_buf_get_name(Overview.state.sbuf)))
+        local win = vim.fn.bufwinid(api.nvim_buf_get_name(Overview.state.sbuf))
+        -- the source buffer should not just be valid but also visible if we are trying to focus it
+        if Overview.state.sbuf >= 0 and win >= 0 then
+            api.nvim_set_current_win()
+        else
+            Overview.close()
+        end
     else
         api.nvim_set_current_win(Overview.state.owin)
     end
