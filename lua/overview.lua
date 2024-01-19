@@ -67,7 +67,7 @@ end
 
 -- Jump to anchor in source buffer.
 local function jump(opts)
-    vim.schedule_wrap(function()
+    vim.schedule(function()
         -- NOTE: Using nvim_win_set_cursor with any winid except 0 seems to be broken.
         -- Therefore, we need to explicitly focus the correct window first.
         api.nvim_set_current_win(vim.fn.bufwinid(api.nvim_buf_get_name(Overview.state.sbuf)))
@@ -180,7 +180,7 @@ function Overview.open()
     api.nvim_buf_create_user_command(Overview.state.obuf, "Jump", jump, opts)
     opts.range = nil
     api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<Cr>]], [[<Cmd>Jump<Cr>]], opts)
-    api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<LeftMouse>]], [[<Cmd>Jump<Cr>]], opts)
+    api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<LeftRelease>]], [[<Cmd>Jump<Cr>]], opts)
 end
 
 -- Swap TOC source to current buffer, if supported.
