@@ -9,9 +9,13 @@ The floating overview can also be used to navigate the open buffer.
 Filetype support:
 - [x] `markdown` (no setext headers yet)
 - [x] `man` (improvement of `gO` or `:lua require('man').show_toc()`)
-- [ ] `tex`
+- [x] `toml` (also `dosini`)
+- [ ] `tex` ([vimtex](https://github.com/lervag/vimtex) provides `vimtex-toc`)
 - [x] `help`
 - [ ] `asciidoc`
+- [ ] `rst` (reStructuredText)
+- [ ] `html`
+- [ ] `xml`
 
 Configuration suggestion:
 ```lua

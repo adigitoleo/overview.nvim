@@ -3,6 +3,7 @@ local Overview = {}
 local markdown = require("filetypes.markdown")
 local man = require("filetypes.man")
 local help = require("filetypes.help")
+local toml = require("filetypes.toml")
 
 Overview.config = {
     window = {
@@ -42,6 +43,10 @@ local function get_parser()
         parser = man.get_headings
     elseif ft == "help" then
         parser = help.get_headings
+    elseif ft == "toml" or ft == "dosini" then
+        -- NOTE: technically, [[double.bracket]] TOML headings are not valid in .ini,
+        -- but .ini files are often used for non-strict config files anyway so I allow it.
+        parser = toml.get_headings
     end
     return parser
 end
