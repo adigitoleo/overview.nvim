@@ -99,7 +99,9 @@ local function decorate_headings(headings)
     result = {}
     for _, v in pairs(headings) do
         if v.level > 1 then
-            table.insert(result, "+" .. string.rep("-", 2 * v.level - 3) .. " " .. v.text)
+            if (v.level - 1) <= Overview.config.toc.maxlevel then
+                table.insert(result, "+" .. string.rep("-", 2 * v.level - 3) .. " " .. v.text)
+            end
         else
             table.insert(result, v.text)
         end
