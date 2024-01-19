@@ -30,14 +30,14 @@ function Man.get_headings(man_text)
                 {
                     line = line_number,
                     text = s,
-                    level = count + 1
+                    level = count > 2 and 3 or 2, -- one level for every two indent spaces
                 })
         elseif prev_line_empty and option then
             table.insert(result,
                 {
                     line = line_number,
                     text = option:gsub("^%s+", ""):gsub("%s%s.*$", ""),
-                    level = 6 -- subsections can only be level 5 max
+                    level = 4 -- subsections can only be level 3 max
                 }
             )
         end
