@@ -43,33 +43,21 @@ local function validate(key, value, section)
             if key == "location" and not (value == "right" or value == "left") then
                 warn(option .. " must be 'right' or 'left'")
                 return cfg[section][key]
-            elseif key == "width" and not type(value) == "number" then
+            elseif (key == "width" or key == "winblend" or key == "zindex") and not type(value) == "number" then
                 warn(option .. " must be a number")
                 return cfg[section][key]
-            elseif key == "wrap" and not type(value) == "bool" then
+            elseif (key == "wrap" or key == "list") and not type(value) == "bool" then
                 warn(option .. " must be a boolean")
-                return cfg[section][key]
-            elseif key == "list" and not type(value) == "bool" then
-                warn(option .. " must be a boolean")
-                return cfg[section][key]
-            elseif key == "winblend" and not type(value) == "number" then
-                warn(option .. " must be a number")
-                return cfg[section][key]
-            elseif key == "zindex" and not type(value) == "number" then
-                warn(option .. " must be a number")
                 return cfg[section][key]
             else
                 warn("unrecognized config option " .. option)
             end
         elseif section == "toc" then
-            if key == "maxlevel" and not type(value) == "number" then
+            if (key == "maxlevel" or key == "foldlevel") and not type(value) == "number" then
                 warn(option .. " must be a number")
                 return cfg[section][key]
             elseif key == "foldenable" and not type(value) == "bool" then
                 warn(option .. " must be a boolean")
-                return cfg[section][key]
-            elseif key == "foldlevel" and not type(value) == "number" then
-                warn(option .. " must be a number")
                 return cfg[section][key]
             else
                 warn("unrecognized config option " .. option)
