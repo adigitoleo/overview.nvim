@@ -2,6 +2,7 @@ local api = vim.api
 local Overview = {}
 local markdown = require("filetypes.markdown")
 local man = require("filetypes.man")
+local help = require("filetypes.help")
 
 Overview.config = {
     window = {
@@ -13,13 +14,13 @@ Overview.config = {
         zindex = 21,        -- floating window 'priority'
     },
     toc = {
-        maxlevel = 3,                       -- max. nesting level in table of contents
-        foldenable = true,                  -- fold (i.e. hide) nested sections in table of contents
-        foldlevel = 2,                      -- enable folding beyond this nesting level
-        autoupdate = true,                  -- automatically update TOC when the connected buffer is changed
+        maxlevel = 3,                   -- max. nesting level in table of contents
+        foldenable = true,              -- fold (i.e. hide) nested sections in table of contents
+        foldlevel = 2,                  -- enable folding beyond this nesting level
+        autoupdate = true,              -- automatically update TOC when the connected buffer is changed
     },
-    refresh = { augroup = "Overview" },     -- autocommand group for refresh autocommands
-    man = { remove_default_binding = true } -- remove default binding of gO to :lua require('man').show_toc()`)
+    refresh = { augroup = "Overview" }, -- autocommand group for refresh autocommands
+    remove_default_bindings = true      -- remove default binding of gO to :lua require('man').show_toc()` or similar
 }
 
 Overview.state = {
@@ -33,13 +34,14 @@ Overview.state = {
 
 -- Return parser for the current filetype (nil if unsupported).
 local function get_parser()
-    -- local bt = vim.o.buftype
     local ft = vim.o.filetype
     local parser = nil
     if ft == "markdown" then
         parser = markdown.get_headings
     elseif ft == "man" then
         parser = man.get_headings
+    elseif ft == "help" then
+        parser = help.get_headings
     end
     return parser
 end
@@ -109,8 +111,8 @@ local function create_autocommands()
         "[overview.nvim] Resize TOC window"
     )
     au("BufEnter", "*", Overview.swap, "[overview.nvim] Swap TOC source if possible")
-    if Overview.config.man.remove_default_binding then
-        au("FileType", "man", function() api.nvim_buf_del_keymap(0, "n", "gO") end)
+    if Overview.config.remove_default_bindings then
+        au("FileType", "man,help", function() api.nvim_buf_del_keymap(0, "n", "gO") end)
     end
 end
 

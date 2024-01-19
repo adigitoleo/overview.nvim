@@ -2,7 +2,7 @@ local Man = {}
 
 function Man.get_headings(man_text)
     local result = {}
-    local section_pattern = "^[%u%s]+$"
+    local section_pattern = "^%u[%u%s]+$"
     -- the "normal" text block is indented by 5 spaces for mdoc and 7 for man by default
     -- assume that anything with 4 or less leading spaces is a subsection header
     local subsection_pattern = "^%s%s?%s?%s?%a.-$"

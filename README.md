@@ -10,7 +10,7 @@ Filetype support:
 - [x] `markdown` (no setext headers yet)
 - [x] `man` (improvement of `gO` or `:lua require('man').show_toc()`)
 - [ ] `tex`
-- [ ] `help` (this is a `buftype`, not a `filetype`)
+- [x] `help`
 - [ ] `asciidoc`
 
 Configuration suggestion:
