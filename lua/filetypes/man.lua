@@ -6,8 +6,9 @@ function Man.get_headings(man_text)
     -- the "normal" text block is indented by 5 spaces for mdoc and 7 for man by default
     -- assume that anything with 4 or less leading spaces is a subsection header
     local subsection_pattern = "^%s%s?%s?%s?%a.-$"
-    local option_pattern = "^%s*[-][-]?%a.-$"
+    local option_pattern = "^%s*[-][-]?%a.-$" -- previous line must also be empty
     local line_number = 1
+    local prev_line_empty = false
     for line in man_text:gmatch("([^\r\n]*)\r?\n?") do
         local section = line:match(section_pattern)
         local subsection = line:match(subsection_pattern)
@@ -31,14 +32,19 @@ function Man.get_headings(man_text)
                     text = s,
                     level = count + 1
                 })
-        elseif option then
+        elseif prev_line_empty and option then
             table.insert(result,
                 {
                     line = line_number,
-                    text = option:gsub("-", "", 2),
+                    text = option:gsub("^%s+", ""):gsub("%s%s.*$", ""),
                     level = 6 -- subsections can only be level 5 max
                 }
             )
+        end
+        if line:match("^$") then
+            prev_line_empty = true
+        else
+            prev_line_empty = false
         end
         line_number = line_number + 1
     end
