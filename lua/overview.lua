@@ -67,10 +67,12 @@ end
 
 -- Jump to anchor in source buffer.
 local function jump(opts)
-    -- NOTE: Using nvim_win_set_cursor with any winid except 0 seems to be broken.
-    -- Therefore, we need to explicitly focus the correct window first.
-    api.nvim_set_current_win(vim.fn.bufwinid(api.nvim_buf_get_name(Overview.state.sbuf)))
-    api.nvim_win_set_cursor(0, { Overview.state.anchors[tonumber(opts.line1)], 0 })
+    vim.schedule_wrap(function()
+        -- NOTE: Using nvim_win_set_cursor with any winid except 0 seems to be broken.
+        -- Therefore, we need to explicitly focus the correct window first.
+        api.nvim_set_current_win(vim.fn.bufwinid(api.nvim_buf_get_name(Overview.state.sbuf)))
+        api.nvim_win_set_cursor(0, { Overview.state.anchors[tonumber(opts.line1)], 0 })
+    end)
 end
 
 -- Make TOC and draw to buffer.
