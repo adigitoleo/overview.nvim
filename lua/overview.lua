@@ -215,7 +215,7 @@ function Overview.focus()
         local win = vim.fn.bufwinid(api.nvim_buf_get_name(Overview.state.sbuf))
         -- the source buffer should not just be valid but also visible if we are trying to focus it
         if Overview.state.sbuf >= 0 and win >= 0 then
-            api.nvim_set_current_win()
+            api.nvim_set_current_win(win)
         else
             Overview.close()
         end
