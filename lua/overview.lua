@@ -15,13 +15,12 @@ Overview.config = {
         zindex = 21,        -- floating window 'priority'
     },
     toc = {
-        maxlevel = 3,                   -- max. nesting level in table of contents
-        foldenable = true,              -- fold (i.e. hide) nested sections in table of contents
-        foldlevel = 2,                  -- enable folding beyond this nesting level
-        autoupdate = true,              -- automatically update TOC when the connected buffer is changed
+        maxlevel = 3,              -- max. nesting level in table of contents
+        foldenable = true,         -- fold (i.e. hide) nested sections in table of contents
+        foldlevel = 2,             -- enable folding beyond this nesting level
     },
-    refresh = { augroup = "Overview" }, -- autocommand group for refresh autocommands
-    remove_default_bindings = true      -- remove default binding of gO to :lua require('man').show_toc()` or similar
+    augroup = "Overview",          -- name of overview.nvim autocommand group
+    remove_default_bindings = true -- remove default binding of gO to :lua require('man').show_toc()` or similar
 }
 
 Overview.state = {
@@ -32,6 +31,61 @@ Overview.state = {
     owin = -1,    -- TOC window ID
 }
 
+local function warn(msg) api.nvim_err_writeln("[overview.nvim]: " .. msg) end
+
+-- Validate custom user config, fall back to defaults defined above.
+local function validate(key, value, section)
+    local cfg = Overview.config
+    local option = table.concat({ key, value }, ".")
+    if section then
+        option = table.concat({ section, key, value }, ".")
+        if section == "window" then
+            if key == "location" and not (value == "right" or value == "left") then
+                warn(option .. " must be 'right' or 'left'")
+                return cfg[section][key]
+            elseif key == "width" and not type(value) == "number" then
+                warn(option .. " must be a number")
+                return cfg[section][key]
+            elseif key == "wrap" and not type(value) == "bool" then
+                warn(option .. " must be a boolean")
+                return cfg[section][key]
+            elseif key == "list" and not type(value) == "bool" then
+                warn(option .. " must be a boolean")
+                return cfg[section][key]
+            elseif key == "winblend" and not type(value) == "number" then
+                warn(option .. " must be a number")
+                return cfg[section][key]
+            elseif key == "zindex" and not type(value) == "number" then
+                warn(option .. " must be a number")
+                return cfg[section][key]
+            else
+                warn("unrecognized config option " .. option)
+            end
+        elseif section == "toc" then
+            if key == "maxlevel" and not type(value) == "number" then
+                warn(option .. " must be a number")
+                return cfg[section][key]
+            elseif key == "foldenable" and not type(value) == "bool" then
+                warn(option .. " must be a boolean")
+                return cfg[section][key]
+            elseif key == "foldlevel" and not type(value) == "number" then
+                warn(option .. " must be a number")
+                return cfg[section][key]
+            else
+                warn("unrecognized config option " .. option)
+            end
+        end
+    elseif key == "augroup" and not type(value) == "string" then
+        warn(option .. " must be a string")
+        return cfg[section][key]
+    elseif key == "remove_default_bindings" and not type(value) == "bool" then
+        warn(option .. " must be a boolean")
+        return cfg[section][key]
+    else
+        warn("unrecognized config option " .. option)
+    end
+    return value
+end
 
 -- Return parser for the current filetype (nil if unsupported).
 local function get_parser()
@@ -103,10 +157,10 @@ end
 
 -- Create autocommands and augroup.
 local function create_autocommands()
-    augroup = api.nvim_create_augroup(Overview.config.refresh.augroup, {})
+    augroup = api.nvim_create_augroup(Overview.config.augroup, {})
     local au = function(event, pattern, callback, desc)
         api.nvim_create_autocmd(
-            event, { group = Overview.config.refresh.augroup, pattern = pattern, callback = callback, desc = desc }
+            event, { group = Overview.config.augroup, pattern = pattern, callback = callback, desc = desc }
         )
     end
     au({ "BufWritePost", "TextChanged" }, "*", Overview.refresh, "[overview.nvim] Refresh TOC contents")
@@ -122,14 +176,14 @@ local function create_autocommands()
 end
 
 -- Delete autocommands and augroup.
-local function delete_autocommands() api.nvim_del_augroup_by_name(Overview.config.refresh.augroup) end
+local function delete_autocommands() api.nvim_del_augroup_by_name(Overview.config.augroup) end
 
 -- Create new TOC sidebar window or focus existing one.
 local function create_sidebar(buf, win)
     local wc = vim.o.columns
     local width = Overview.config.window.width
     if width - 2 > wc then
-        api.nvim_err_writeln("[overview.nvim]: Window is too narrow for TOC display!")
+        warn("Window is too narrow for TOC display!")
         return
     end
     if not api.nvim_buf_is_valid(buf) then
@@ -186,7 +240,7 @@ end
 function Overview.open()
     parser = get_parser()
     if parser == nil then
-        api.nvim_err_writeln("[overview.nvim]: Unsupported filetype.")
+        warn("Unsupported filetype.")
         return
     end
     Overview.state.parser = parser
@@ -236,6 +290,23 @@ function Overview.reset()
     delete_autocommands()
     Overview.open()
     create_autocommands()
+end
+
+-- Setup function to allow and validate user configuration.
+function Overview.setup(config)
+    Overview.close()
+    delete_autocommands()
+    for k, v in pairs(config) do
+        if type(v) == "table" then
+            for _k, _v in pairs(v) do
+                Overview.config[k][_k] = validate(_k, _v, k)
+            end
+        else
+            Overview.config[k] = validate(k, v)
+        end
+    end
+    create_autocommands()
+    return Overview
 end
 
 create_autocommands()
