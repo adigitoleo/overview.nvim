@@ -31,7 +31,7 @@ function Man.get_headings(man_text)
                     text = s,
                     level = count + 1
                 })
-        else
+        elseif option then
             table.insert(result,
                 {
                     line = line_number,
