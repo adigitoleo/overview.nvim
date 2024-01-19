@@ -13,12 +13,13 @@ Overview.config = {
         zindex = 21,        -- floating window 'priority'
     },
     toc = {
-        maxlevel = 3,                  -- max. nesting level in table of contents
-        foldenable = true,             -- fold (i.e. hide) nested sections in table of contents
-        foldlevel = 2,                 -- enable folding beyond this nesting level
-        autoupdate = true,             -- automatically update TOC when the connected buffer is changed
+        maxlevel = 3,                       -- max. nesting level in table of contents
+        foldenable = true,                  -- fold (i.e. hide) nested sections in table of contents
+        foldlevel = 2,                      -- enable folding beyond this nesting level
+        autoupdate = true,                  -- automatically update TOC when the connected buffer is changed
     },
-    refresh = { augroup = "Overview" } -- autocommand group for refresh autocommands
+    refresh = { augroup = "Overview" },     -- autocommand group for refresh autocommands
+    man = { remove_default_binding = true } -- remove default binding of gO to :lua require('man').show_toc()`)
 }
 
 Overview.state = {
@@ -108,6 +109,9 @@ local function create_autocommands()
         "[overview.nvim] Resize TOC window"
     )
     au("BufEnter", "*", Overview.swap, "[overview.nvim] Swap TOC source if possible")
+    if Overview.config.man.remove_default_binding then
+        au("FileType", "man", function() api.nvim_buf_del_keymap(0, "n", "gO") end)
+    end
 end
 
 -- Delete autocommands and augroup.

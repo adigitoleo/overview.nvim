@@ -8,11 +8,10 @@ The floating overview can also be used to navigate the open buffer.
 
 Filetype support:
 - [x] `markdown` (no setext headers yet)
-- [x] `man`
+- [x] `man` (improvement of `gO` or `:lua require('man').show_toc()`)
 - [ ] `tex`
 - [ ] `help` (this is a `buftype`, not a `filetype`)
 - [ ] `asciidoc`
-- [ ] `changelog`
 
 Configuration suggestion:
 ```lua
