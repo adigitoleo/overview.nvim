@@ -1,6 +1,7 @@
 local api = vim.api
 local Overview = {}
 local markdown = require("filetypes.markdown")
+local man = require("filetypes.man")
 
 Overview.config = {
     window = {
@@ -36,6 +37,8 @@ local function get_parser()
     local parser = nil
     if ft == "markdown" then
         parser = markdown.get_headings
+    elseif ft == "man" then
+        parser = man.get_headings
     end
     return parser
 end

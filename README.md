@@ -8,7 +8,7 @@ The floating overview can also be used to navigate the open buffer.
 
 Filetype support:
 - [x] `markdown` (no setext headers yet)
-- [ ] `man`
+- [x] `man`
 - [ ] `tex`
 - [ ] `help` (this is a `buftype`, not a `filetype`)
 - [ ] `asciidoc`
