@@ -16,8 +16,6 @@ Overview.config = {
     },
     toc = {
         maxlevel = 3,              -- max. nesting level in table of contents
-        foldenable = true,         -- fold (i.e. hide) nested sections in table of contents
-        foldlevel = 2,             -- enable folding beyond this nesting level
     },
     augroup = "Overview",          -- name of overview.nvim autocommand group
     remove_default_bindings = true -- remove default binding of gO to :lua require('man').show_toc()` or similar
@@ -53,11 +51,8 @@ local function validate(key, value, section)
                 warn("unrecognized config option " .. option)
             end
         elseif section == "toc" then
-            if (key == "maxlevel" or key == "foldlevel") and not type(value) == "number" then
+            if key == "maxlevel" and not type(value) == "number" then
                 warn(option .. " must be a number")
-                return cfg[section][key]
-            elseif key == "foldenable" and not type(value) == "bool" then
-                warn(option .. " must be a boolean")
                 return cfg[section][key]
             else
                 warn("unrecognized config option " .. option)
