@@ -34,10 +34,10 @@ local function warn(msg) api.nvim_err_writeln("[overview.nvim]: " .. msg) end
 -- Validate custom user config, fall back to defaults defined above.
 local function validate(key, value, section)
     local cfg = Overview.config
-    local option = table.concat({ key, value }, ".")
+    local option = key .. " = " .. value
     if section then
-        option = table.concat({ section, key, value }, ".")
-        if section == "window" then
+        option = table.concat({ section, key }, ".") .. " = " .. value
+        if section == "window" and cfg.window[key] ~= nil then
             if key == "location" and not (value == "right" or value == "left") then
                 warn(option .. " must be 'right' or 'left'")
                 return cfg[section][key]
@@ -47,23 +47,23 @@ local function validate(key, value, section)
             elseif (key == "wrap" or key == "list") and not type(value) == "bool" then
                 warn(option .. " must be a boolean")
                 return cfg[section][key]
-            else
-                warn("unrecognized config option " .. option)
             end
-        elseif section == "toc" then
+        elseif section == "toc" and cfg.toc[key] ~= nil then
             if key == "maxlevel" and not type(value) == "number" then
                 warn(option .. " must be a number")
                 return cfg[section][key]
-            else
-                warn("unrecognized config option " .. option)
             end
+        else
+            warn("unrecognized config option " .. option)
         end
-    elseif key == "augroup" and not type(value) == "string" then
-        warn(option .. " must be a string")
-        return cfg[section][key]
-    elseif key == "remove_default_bindings" and not type(value) == "bool" then
-        warn(option .. " must be a boolean")
-        return cfg[section][key]
+    elseif cfg[key] ~= nil then
+        if key == "augroup" and not type(value) == "string" then
+            warn(option .. " must be a string")
+            return cfg[section][key]
+        elseif key == "remove_default_bindings" and not type(value) == "bool" then
+            warn(option .. " must be a boolean")
+            return cfg[section][key]
+        end
     else
         warn("unrecognized config option " .. option)
     end
