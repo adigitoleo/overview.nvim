@@ -3,8 +3,11 @@
 View and navigate a table of contents for markup files.
 
 This [NeoVim](https://neovim.io) plugin, written in Lua, extracts a table of
-contents from markup buffers and presents it in an unobtrusive floating window.
-The floating overview can also be used to navigate the open buffer.
+contents (TOC) from markup buffers and presents it in an unobtrusive floating
+window. The floating overview can also be used to navigate the open buffer.
+The TOC is updated as the buffer contents change (tree-sitter is not required).
+
+![overview.nvim demo](overview.webp)
 
 Filetype support:
 - [x] `markdown` (no setext headers yet)
@@ -17,13 +20,19 @@ Filetype support:
 - [ ] `html`
 - [ ] `xml`
 
-Configuration suggestion:
+Install the plugin using your preferred plugin manager. Alternatively, NeoVim
+can load packages if they are added to your 'packpath'.
+
+### Configuration suggestion:
 ```lua
-overview = require("overview.nvim")  -- Or load("overview") via packer.nvim
+-- Set up key bindings to toggle/focus the TOC sidebar.
+overview = require("overview.nvim")
 if overview then
     bindkey("n", "gO", overview.toggle, { desc = "Toggle Overview sidebar for current buffer" })
     bindkey("n", "go", overview.focus, { desc = "Toggle focus between Overview sidebar and source buffer" })
 end
 ```
+
+Available options are described in `:help overview`.
 
 Please send patches/queries to my [public inbox](https://lists.sr.ht/~adigitoleo/public-inbox).
