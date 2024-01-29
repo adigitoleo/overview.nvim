@@ -151,7 +151,11 @@ local function create_autocommands()
     au({ "BufWritePost", "TextChanged" }, "*", Overview.refresh, "[overview.nvim] Refresh TOC contents")
     au(
         "VimResized", "*",
-        vim.schedule_wrap(function() api.nvim_win_set_height(Overview.state.owin, get_avail_height()) end),
+        vim.schedule_wrap(function()
+            if api.nvim_win_is_valid(Overview.state.owin) then
+                api.nvim_win_set_height(Overview.state.owin, get_avail_height())
+            end
+        end),
         "[overview.nvim] Resize TOC window"
     )
     au("BufEnter", "*", Overview.swap, "[overview.nvim] Swap TOC source if possible")
