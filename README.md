@@ -20,6 +20,10 @@ Filetype support:
 - [ ] `html`
 - [ ] `xml`
 
+Miscellaneous:
+- [ ] callback compatible with `lsp-on-list-handler` for e.g. showing the list
+  of symbols for the current buffer with `vim.lsp.buf.document_symbol()`
+
 Install the plugin using your preferred plugin manager. Alternatively, NeoVim
 can load packages if they are added to your 'packpath'.
 
