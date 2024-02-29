@@ -110,11 +110,9 @@ end
 local function store_anchors(headings, is_setqflist_source)
     Overview.state.anchors = {}
     if is_setqflist_source then
-        for _, qflist_item in pairs(headings) do
-            for _, v in pairs(qflist_item) do
+        for _, v in pairs(headings) do
                 -- TODO: Also support v.col (column number), here and in jump().
-                table.insert(Overview.state.anchors, v.lnum)
-            end
+            table.insert(Overview.state.anchors, v.lnum)
         end
     else
         for _, v in pairs(headings) do
@@ -133,26 +131,31 @@ local function jump(opts)
     end)
 end
 
--- Make TOC and draw to buffer.
-local function draw()
-    api.nvim_buf_set_option(Overview.state.obuf, "modifiable", true)
-    local content = table.concat(api.nvim_buf_get_lines(Overview.state.sbuf, 0, -1, true), "\n")
-    local headings = Overview.state.parser(content)
-    store_anchors(headings, false)
-    api.nvim_buf_set_lines(Overview.state.obuf, 0, -1, true, decorate_headings(headings))
-    api.nvim_buf_set_option(Overview.state.obuf, "modifiable", false)
-end
-
 -- Draw list of LSP symbols in floating buffer.
 local function draw_lsp(options)
-    api.nvim_buf_set_option(Overview.state.obuf, "modifiable", true)
-    store_anchors(options.items)
+    store_anchors(options.items, true)
     local lines = {}
     for _, v in pairs(options.items) do
         table.insert(lines, v.text)
     end
+    api.nvim_buf_set_option(Overview.state.obuf, "modifiable", true)
     api.nvim_buf_set_lines(Overview.state.obuf, 0, -1, true, lines)
     api.nvim_buf_set_option(Overview.state.obuf, "modifiable", false)
+end
+
+-- Make TOC and draw to buffer.
+local function draw()
+    local is_setqflist_source = (Overview.state.parser == nil)
+    if is_setqflist_source then
+        lsp.buf.document_symbol({ on_list = draw_lsp })
+    else
+        local content = table.concat(api.nvim_buf_get_lines(Overview.state.sbuf, 0, -1, true), "\n")
+        local headings = Overview.state.parser(content)
+        store_anchors(headings, is_setqflist_source)
+        api.nvim_buf_set_option(Overview.state.obuf, "modifiable", true)
+        api.nvim_buf_set_lines(Overview.state.obuf, 0, -1, true, decorate_headings(headings))
+        api.nvim_buf_set_option(Overview.state.obuf, "modifiable", false)
+    end
 end
 
 -- Get available height for floating sidebars.
@@ -251,7 +254,10 @@ end
 -- Open new TOC for current buftype, if supported.
 function Overview.open()
     parser = get_parser()
-    if parser ~= nil then
+    if parser == nil and vim.tbl_isempty(lsp.get_active_clients({ bufnr = fn.bufnr() })) then
+        warn("Unsupported filetype.")
+        return
+    else
         Overview.state.parser = parser
         Overview.state.sbuf = api.nvim_win_get_buf(0)
         Overview.state.obuf, Overview.state.owin = create_sidebar(Overview.state.obuf, Overview.state.owin)
@@ -261,18 +267,6 @@ function Overview.open()
         opts.range = nil
         api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<Cr>]], [[<Cmd>Jump<Cr>]], opts)
         api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<LeftRelease>]], [[<Cmd>Jump<Cr>]], opts)
-    elseif not vim.tbl_isempty(lsp.get_active_clients({bufnr = fn.bufnr()})) then
-        Overview.state.sbuf = api.nvim_win_get_buf(0)
-        Overview.state.obuf, Overview.state.owin = create_sidebar(Overview.state.obuf, Overview.state.owin)
-        lsp.buf.document_symbol({on_list = draw_lsp})
-        opts = { desc = "Jump to anchor in source buffer", range = true }
-        api.nvim_buf_create_user_command(Overview.state.obuf, "Jump", jump, opts)
-        opts.range = nil
-        api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<Cr>]], [[<Cmd>Jump<Cr>]], opts)
-        api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<LeftRelease>]], [[<Cmd>Jump<Cr>]], opts)
-    else
-        warn("Unsupported filetype.")
-        return
     end
 end
 
@@ -280,7 +274,8 @@ end
 function Overview.swap()
     if api.nvim_win_is_valid(Overview.state.owin) then
         parser = get_parser()
-        if parser == nil then return end -- No errors, just keep the old TOC in the window.
+        -- No errors here, just keep the old TOC in the window.
+        if parser == nil and vim.tbl_isempty(lsp.get_active_clients({ bufnr = fn.bufnr() })) then return end
         Overview.state.parser = parser
         Overview.state.sbuf = api.nvim_win_get_buf(0)
         draw()
