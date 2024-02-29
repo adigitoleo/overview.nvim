@@ -262,7 +262,7 @@ function Overview.open()
         Overview.state.sbuf = api.nvim_win_get_buf(0)
         Overview.state.obuf, Overview.state.owin = create_sidebar(Overview.state.obuf, Overview.state.owin)
         draw()
-        opts = { desc = "Jump to anchor in source buffer", range = true }
+        local opts = { desc = "Jump to anchor in source buffer", range = true }
         api.nvim_buf_create_user_command(Overview.state.obuf, "Jump", jump, opts)
         opts.range = nil
         api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<Cr>]], [[<Cmd>Jump<Cr>]], opts)
