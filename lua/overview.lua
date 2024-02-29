@@ -255,7 +255,7 @@ end
 
 -- Open new TOC for current buftype, if supported.
 function Overview.open()
-    parser = get_parser()
+    local parser = get_parser()
     if parser == nil then
         warn("Unsupported filetype.")
         return
@@ -274,9 +274,9 @@ end
 
 -- Swap TOC source to current buffer, if supported.
 function Overview.swap()
+    local parser = get_parser()
+    if parser == nil then return end -- No errors here, just keep the old TOC in the window.
     if api.nvim_win_is_valid(Overview.state.owin) then
-        parser = get_parser()
-        if parser == nil then return end -- No errors here, just keep the old TOC in the window.
         Overview.state.parser = parser
         Overview.state.sbuf = api.nvim_win_get_buf(0)
         draw()
