@@ -1,4 +1,6 @@
 local api = vim.api
+local fn = vim.fn
+local lsp = vim.lsp
 local Overview = {}
 local markdown = require("filetypes.markdown")
 local man = require("filetypes.man")
@@ -104,11 +106,20 @@ local function decorate_headings(headings)
     return result
 end
 
--- Save TOC document anchors from parsed heading metadata.
-local function store_anchors(headings)
+-- Save TOC document anchors from parsed heading metadata or |setqflist-what| table.
+local function store_anchors(headings, is_setqflist_source)
     Overview.state.anchors = {}
-    for _, v in pairs(headings) do
-        table.insert(Overview.state.anchors, v.line)
+    if is_setqflist_source then
+        for _, qflist_item in pairs(headings) do
+            for _, v in pairs(qflist_item) do
+                -- TODO: Also support v.col (column number), here and in jump().
+                table.insert(Overview.state.anchors, v.lnum)
+            end
+        end
+    else
+        for _, v in pairs(headings) do
+            table.insert(Overview.state.anchors, v.line)
+        end
     end
 end
 
@@ -127,8 +138,20 @@ local function draw()
     api.nvim_buf_set_option(Overview.state.obuf, "modifiable", true)
     local content = table.concat(api.nvim_buf_get_lines(Overview.state.sbuf, 0, -1, true), "\n")
     local headings = Overview.state.parser(content)
-    store_anchors(headings)
+    store_anchors(headings, false)
     api.nvim_buf_set_lines(Overview.state.obuf, 0, -1, true, decorate_headings(headings))
+    api.nvim_buf_set_option(Overview.state.obuf, "modifiable", false)
+end
+
+-- Draw list of LSP symbols in floating buffer.
+local function draw_lsp(options)
+    api.nvim_buf_set_option(Overview.state.obuf, "modifiable", true)
+    store_anchors(options.items)
+    local lines = {}
+    for _, v in pairs(options.items) do
+        table.insert(lines, v.text)
+    end
+    api.nvim_buf_set_lines(Overview.state.obuf, 0, -1, true, lines)
     api.nvim_buf_set_option(Overview.state.obuf, "modifiable", false)
 end
 
@@ -228,19 +251,29 @@ end
 -- Open new TOC for current buftype, if supported.
 function Overview.open()
     parser = get_parser()
-    if parser == nil then
+    if parser ~= nil then
+        Overview.state.parser = parser
+        Overview.state.sbuf = api.nvim_win_get_buf(0)
+        Overview.state.obuf, Overview.state.owin = create_sidebar(Overview.state.obuf, Overview.state.owin)
+        draw()
+        opts = { desc = "Jump to anchor in source buffer", range = true }
+        api.nvim_buf_create_user_command(Overview.state.obuf, "Jump", jump, opts)
+        opts.range = nil
+        api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<Cr>]], [[<Cmd>Jump<Cr>]], opts)
+        api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<LeftRelease>]], [[<Cmd>Jump<Cr>]], opts)
+    elseif not vim.tbl_isempty(lsp.get_active_clients({bufnr = fn.bufnr()})) then
+        Overview.state.sbuf = api.nvim_win_get_buf(0)
+        Overview.state.obuf, Overview.state.owin = create_sidebar(Overview.state.obuf, Overview.state.owin)
+        lsp.buf.document_symbol({on_list = draw_lsp})
+        opts = { desc = "Jump to anchor in source buffer", range = true }
+        api.nvim_buf_create_user_command(Overview.state.obuf, "Jump", jump, opts)
+        opts.range = nil
+        api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<Cr>]], [[<Cmd>Jump<Cr>]], opts)
+        api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<LeftRelease>]], [[<Cmd>Jump<Cr>]], opts)
+    else
         warn("Unsupported filetype.")
         return
     end
-    Overview.state.parser = parser
-    Overview.state.sbuf = api.nvim_win_get_buf(0)
-    Overview.state.obuf, Overview.state.owin = create_sidebar(Overview.state.obuf, Overview.state.owin)
-    draw()
-    opts = { desc = "Jump to anchor in source buffer", range = true }
-    api.nvim_buf_create_user_command(Overview.state.obuf, "Jump", jump, opts)
-    opts.range = nil
-    api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<Cr>]], [[<Cmd>Jump<Cr>]], opts)
-    api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<LeftRelease>]], [[<Cmd>Jump<Cr>]], opts)
 end
 
 -- Swap TOC source to current buffer, if supported.
