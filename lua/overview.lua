@@ -86,6 +86,8 @@ local function get_parser()
         -- NOTE: technically, [[double.bracket]] TOML headings are not valid in .ini,
         -- but .ini files are often used for non-strict config files anyway so I allow it.
         parser = toml.get_headings
+    elseif not vim.tbl_isempty(lsp.get_active_clients({ bufnr = fn.bufnr() })) then
+        parser = "lsp-on-list-handler"
     end
     return parser
 end
@@ -107,11 +109,11 @@ local function decorate_headings(headings)
 end
 
 -- Save TOC document anchors from parsed heading metadata or |setqflist-what| table.
-local function store_anchors(headings, is_setqflist_source)
+local function store_anchors(headings, is_lsp_list_source)
     Overview.state.anchors = {}
-    if is_setqflist_source then
+    if is_lsp_list_source then
         for _, v in pairs(headings) do
-                -- TODO: Also support v.col (column number), here and in jump().
+            -- TODO: Also support v.col (column number), here and in jump().
             table.insert(Overview.state.anchors, v.lnum)
         end
     else
@@ -145,13 +147,13 @@ end
 
 -- Make TOC and draw to buffer.
 local function draw()
-    local is_setqflist_source = (Overview.state.parser == nil)
-    if is_setqflist_source then
+    local is_lsp_list_source = (Overview.state.parser == "lsp-on-list-handler")
+    if is_lsp_list_source then
         lsp.buf.document_symbol({ on_list = draw_lsp })
     else
         local content = table.concat(api.nvim_buf_get_lines(Overview.state.sbuf, 0, -1, true), "\n")
         local headings = Overview.state.parser(content)
-        store_anchors(headings, is_setqflist_source)
+        store_anchors(headings, is_lsp_list_source)
         api.nvim_buf_set_option(Overview.state.obuf, "modifiable", true)
         api.nvim_buf_set_lines(Overview.state.obuf, 0, -1, true, decorate_headings(headings))
         api.nvim_buf_set_option(Overview.state.obuf, "modifiable", false)
@@ -254,7 +256,7 @@ end
 -- Open new TOC for current buftype, if supported.
 function Overview.open()
     parser = get_parser()
-    if parser == nil and vim.tbl_isempty(lsp.get_active_clients({ bufnr = fn.bufnr() })) then
+    if parser == nil then
         warn("Unsupported filetype.")
         return
     else
@@ -274,8 +276,7 @@ end
 function Overview.swap()
     if api.nvim_win_is_valid(Overview.state.owin) then
         parser = get_parser()
-        -- No errors here, just keep the old TOC in the window.
-        if parser == nil and vim.tbl_isempty(lsp.get_active_clients({ bufnr = fn.bufnr() })) then return end
+        if parser == nil then return end -- No errors here, just keep the old TOC in the window.
         Overview.state.parser = parser
         Overview.state.sbuf = api.nvim_win_get_buf(0)
         draw()
