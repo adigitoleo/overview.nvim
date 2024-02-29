@@ -275,11 +275,10 @@ end
 -- Swap TOC source to current buffer, if supported.
 function Overview.swap()
     local parser = get_parser()
-    if parser == nil then return end -- No errors here, just keep the old TOC in the window.
-    if api.nvim_win_is_valid(Overview.state.owin) then
+    if api.nvim_win_is_valid(Overview.state.owin) and parser ~= nil then
         Overview.state.parser = parser
         Overview.state.sbuf = api.nvim_win_get_buf(0)
-        draw()
+        Overview.refresh()
     end
 end
 
