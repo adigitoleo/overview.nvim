@@ -187,6 +187,7 @@ local function create_autocommands()
         "[overview.nvim] Resize TOC window"
     )
     au("BufEnter", "*", Overview.swap, "[overview.nvim] Swap TOC source if possible")
+    au("CursorHold", "*", Overview.refresh, "[overview.nvim] Refresh TOC using current source")
     if Overview.config.remove_default_bindings then
         au("FileType", "man,help", function() api.nvim_buf_del_keymap(0, "n", "gO") end)
     end
