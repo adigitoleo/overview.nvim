@@ -18,6 +18,13 @@ file types include markdown, help, man and toml. The plugin requires NeoVim,
 and is know to work on versions 0.9.5+. The table of contents is presented
 using a floating window (see |api-floatwin|).
 
+Bug fixes and feature requests are welcome at my public inbox: >
+
+	https://lists.sr.ht/~adigitoleo/public-inbox
+
+Patches should be applicable to the `dev` branch. See |overview-bugs| for a
+list of current known issues that are most in need of attention.
+
 
 ==============================================================================
 USAGE							*overview-usage*
@@ -126,5 +133,14 @@ called directly or used in key mappings. They are listed in the table below.
 	`reset()`	reset the table of contents window and autocommands
 			after reloading the configuration
 
+
+==============================================================================
+BUGS							*overview-bugs*
+
+The symbols list for code files is still experimental, and has some issues.
+`open()` fails to populate the list until the user focuses back to the code
+buffer; LSP-populated sidebars also do not respond to `swap()` immediately and
+require a subsequent `refresh()` (which is triggered by `CursorHold` at the
+moment as a workaround).
 
 vim:tw=78:ts=8:noet:ft=help:norl:
