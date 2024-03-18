@@ -1,14 +1,22 @@
 *overview*	View and navigate a table of contents for markup files
-                                    
+
 		 ___ _  _____ _____  __(_)__ _    __
 		/ _ \ !/ / -_) __/ !/ / / -_) !/!/ /
-		\___/___/\__/_/  !___/_/\__/!__.__/ 
+		\___/___/\__/_/  !___/_/\__/!__.__/
 
 		https://git.sr.ht/~adigitoleo/overview.nvim
 
 Use `:lua require('overview').toggle()` to show the table of contents for this
 help file! Navigate sections by pressing `Enter` (`<Cr>`) on any line in the
-table of contents.
+table of contents. Alternate focus between the table of contents window and
+the original buffer using `:lua require('overview.nvim').focus()`; it is a
+good idea to set |key-mapping|s for these functions, for example: >
+
+	overview = require("overview.nvim")
+	if overview then
+	    bindkey("n", "gO", overview.toggle, { desc = "Toggle Overview sidebar for current buffer" })
+	    bindkey("n", "go", overview.focus, { desc = "Toggle focus between Overview sidebar and source buffer" })
+	end
 
 ==============================================================================
 INTRODUCTION						*overview-introduction*

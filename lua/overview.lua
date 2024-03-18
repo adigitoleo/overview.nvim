@@ -219,6 +219,7 @@ local function create_sidebar(buf, win)
             height = get_avail_height(),
             col = Overview.config.window.location == "left" and 0 or wc - width,
             row = 0,
+            focusable = false,
         })
         api.nvim_win_set_option(win, "winblend", Overview.config.window.winblend)
         api.nvim_win_set_option(win, "wrap", Overview.config.window.wrap)
