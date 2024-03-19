@@ -23,8 +23,9 @@ INTRODUCTION						*overview-introduction*
 
 This plugin provides dynamic table of contents for markup files. Supported
 file types include markdown, help, man and toml. The plugin requires NeoVim,
-and is know to work on versions 0.9.5+. The table of contents is presented
-using a floating window (see |api-floatwin|).
+and is know to work on versions 0.9.5+ (the LSP functionality used for symbol
+lists in code files was added in version 0.6.1). The table of contents is
+presented using a floating window (see |api-floatwin|).
 
 Bug fixes and feature requests are welcome at my public inbox: >
 

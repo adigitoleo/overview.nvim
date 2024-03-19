@@ -135,11 +135,26 @@ end
 
 -- Draw list of LSP symbols in floating buffer.
 local function draw_lsp(options)
-    store_anchors(options.items, true)
+    local items = {}
     local lines = {}
     for _, v in pairs(options.items) do
-        table.insert(lines, v.text)
+        -- Filters for the list of document symbols, hardcoded for now.
+        -- Check the symbolKind table at:
+        -- <https://lsp-devtools.readthedocs.io/en/latest/capabilities/text-document/document-symbols.html#symbolkind>
+        for _, const_pattern in pairs({ "%[Variable%]%s+%u+", "%[Constant%]" }) do
+            if v.col == 1 and string.find(v.text, const_pattern) ~= nil then
+                table.insert(lines, v.text)
+                table.insert(items, v)
+            end
+        end
+        for _, pattern in pairs({ "%[Constructor%]", "%[Enum%]", "%[Function%]", "%[Class%]", "%[Method%]", "%[Namespace%]", "%[Struct%]" }) do
+            if string.find(v.text, pattern) ~= nil then
+                table.insert(lines, v.text)
+                table.insert(items, v)
+            end
+        end
     end
+    store_anchors(items, true)
     api.nvim_buf_set_option(Overview.state.obuf, "modifiable", true)
     api.nvim_buf_set_lines(Overview.state.obuf, 0, -1, true, lines)
     api.nvim_buf_set_option(Overview.state.obuf, "modifiable", false)
