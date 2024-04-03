@@ -111,6 +111,55 @@ buffer. It is a table with the following keys
 					table of contents (`3` by default)
 
 ------------------------------------------------------------------------------
+					*Overview.config.lsp_const_symbolkinds*
+
+This table value is used to define the pattern matches that select which LSP
+symbols, found at the GLOBAL scope, will be listed in the table of contents
+window. The keys of the table should match a code |filetype|, except for the
+special key `_fallback` which defines fallback patterns for all code filetypes
+that do not have an explicitly defined symbol whitelist.
+
+Lua configuration example~
+>
+	require('overview').setup{
+		lsp_const_symbolkinds = {
+			_fallback = { "%[Variable%]%s+%u+", "%[Constant%]" },
+			lua = { "%[Variable%]%s+%u+" },
+		},
+	}
+
+
+For the list of named LSP symbol types, which should be used to define the
+patterns, please consult:
+<https://lsp-devtools.readthedocs.io/en/latest/capabilities/text-document/document-symbols.html#symbolkind>.
+
+NOTE: By default, only a `_fallback` is set (patterns as above).
+
+------------------------------------------------------------------------------
+					*Overview.config.lsp_scoped_symbolkinds*
+
+This table value is used to define the pattern matches that select which LSP
+symbols, found in any LOCAL scope, will be listed in the table of contents
+window. The keys of the table should match a code |filetype|, except for the
+special key `_fallback` which defines fallback patterns for all code filetypes
+that do not have an explicitly defined symbol whitelist.
+
+Lua configuration example~
+>
+	require('overview').setup{
+		lsp_scoped_symbolkinds = {
+			_fallback = { "%[Constructor%]", "%[Enum%]", "%[Function%]", "%[Class%]", "%[Method%]", "%[Namespace%]", "%[Struct%]" },
+			lua = { "%[Function%]", "%[Method%]", "%[Struct%]" },
+		},
+	}
+
+For the list of named LSP symbol types, which should be used to define the
+patterns, please consult:
+<https://lsp-devtools.readthedocs.io/en/latest/capabilities/text-document/document-symbols.html#symbolkind>.
+
+NOTE: By default, only a `_fallback` is set (patterns as above).
+
+------------------------------------------------------------------------------
 						*Overview.config.augroup*
 
 This string value is used to define the name of the |autocommand| group created

@@ -17,7 +17,16 @@ Overview.config = {
         zindex = 21,        -- floating window 'priority'
     },
     toc = {
-        maxlevel = 3,              -- max. nesting level in table of contents
+        maxlevel = 3, -- max. nesting level in table of contents
+    },
+    -- For the list of named LSP symbol types, check the symbolKind table at:
+    -- <https://lsp-devtools.readthedocs.io/en/latest/capabilities/text-document/document-symbols.html#symbolkind>
+    -- Fallbacks apply to all code filetypes that do not have an explicit whitelist pattern table set.
+    lsp_const_symbolkinds = {  -- Whitelist of symbolKind patterns for constants (global scope)
+        _fallback = { "%[Variable%]%s+%u+", "%[Constant%]" },
+    },
+    lsp_scoped_symbolkinds = { -- Whitelist of symbolKind patterns for any local scope
+        _fallback = { "%[Constructor%]", "%[Enum%]", "%[Function%]", "%[Class%]", "%[Method%]", "%[Namespace%]", "%[Struct%]" },
     },
     augroup = "Overview",          -- name of overview.nvim autocommand group
     remove_default_bindings = true -- remove default binding of gO to :lua require('man').show_toc()` or similar
@@ -54,6 +63,11 @@ local function validate(key, value, section)
             if key == "maxlevel" and not type(value) == "number" then
                 warn(option .. " must be a number")
                 return cfg[section][key]
+            end
+        elseif section == "lsp_const_symbolkinds" or section == "lsp_scoped_symbolkinds" then
+            if not type(value) == "table" then
+                warn(option .. " must be a table")
+                if key == "_fallback" then return cfg[section][key] end
             end
         else
             warn("unrecognized config option " .. option)
@@ -138,16 +152,20 @@ local function draw_lsp(options)
     local items = {}
     local lines = {}
     for _, v in pairs(options.items) do
-        -- Filters for the list of document symbols, hardcoded for now.
-        -- Check the symbolKind table at:
-        -- <https://lsp-devtools.readthedocs.io/en/latest/capabilities/text-document/document-symbols.html#symbolkind>
-        for _, const_pattern in pairs({ "%[Variable%]%s+%u+", "%[Constant%]" }) do
+        local ft = api.nvim_buf_get_option(Overview.state.sbuf, "filetype")
+        -- Apply whitelist filter to list of LSP symbols from global scope.
+        local const_symbolkinds = Overview.config.lsp_const_symbolkinds[ft]
+        if const_symbolkinds == nil then const_symbolkinds = Overview.config.lsp_const_symbolkinds._fallback end
+        for _, const_pattern in pairs(const_symbolkinds) do
             if v.col == 1 and string.find(v.text, const_pattern) ~= nil then
                 table.insert(lines, v.text)
                 table.insert(items, v)
             end
         end
-        for _, pattern in pairs({ "%[Constructor%]", "%[Enum%]", "%[Function%]", "%[Class%]", "%[Method%]", "%[Namespace%]", "%[Struct%]" }) do
+        -- Apply whitelist filter to list of LSP symbols from all local scope.
+        local scoped_symbolkinds = Overview.config.lsp_scoped_symbolkinds[ft]
+        if scoped_symbolkinds == nil then scoped_symbolkinds = Overview.config.lsp_scoped_symbolkinds._fallback end
+        for _, pattern in pairs(scoped_symbolkinds) do
             if string.find(v.text, pattern) ~= nil then
                 table.insert(lines, v.text)
                 table.insert(items, v)
