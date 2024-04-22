@@ -27,6 +27,7 @@ Miscellaneous:
 - [x] list of symbols for current buffer (requires an active language server
   for the buffer)
   - [x] allow a (per-filetype?) configurable filter for the list
+  - [ ] allow multiline entries (e.g. from texlab LSP)
 
 Install the plugin using your preferred plugin manager. Alternatively, NeoVim
 can load packages if they are added to your 'packpath'.
