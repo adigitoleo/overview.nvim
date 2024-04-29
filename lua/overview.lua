@@ -22,7 +22,7 @@ Overview.config = {
     -- For the list of named LSP symbol types, check the symbolKind table at:
     -- <https://lsp-devtools.readthedocs.io/en/latest/capabilities/text-document/document-symbols.html#symbolkind>
     -- Fallbacks apply to all code filetypes that do not have an explicit whitelist pattern table set.
-    lsp_const_symbolkinds = {  -- Whitelist of symbolKind patterns for constants (global scope)
+    lsp_const_symbolkinds = { -- Whitelist of symbolKind patterns for constants (global scope)
         _fallback = { "%[Variable%]%s+%u+", "%[Constant%]" },
     },
     lsp_scoped_symbolkinds = { -- Whitelist of symbolKind patterns for any local scope
@@ -178,6 +178,14 @@ local function draw_lsp(options)
     api.nvim_buf_set_option(Overview.state.obuf, "modifiable", false)
 end
 
+-- Get available height for floating sidebars.
+local function get_avail_height()
+    local has_tabline = vim.o.showtabline == 2 or (vim.o.showtabline == 1 and #api.nvim_list_tabpages() > 1)
+    local has_statusline = vim.o.laststatus > 0
+    -- NOTE: The last -2 here is for the border.
+    return vim.o.lines - vim.o.cmdheight - (has_tabline and 1 or 0) - (has_statusline and 1 or 0) - 2
+end
+
 -- Make TOC and draw to buffer.
 local function draw()
     local is_lsp_list_source = (Overview.state.parser == "lsp-on-list-handler")
@@ -189,45 +197,85 @@ local function draw()
         store_anchors(headings, is_lsp_list_source)
         api.nvim_buf_set_option(Overview.state.obuf, "modifiable", true)
         api.nvim_buf_set_lines(Overview.state.obuf, 0, -1, true, decorate_headings(headings))
+        api.nvim_buf_set_option(Overview.state.obuf, "buftype", "nofile")
+        api.nvim_buf_set_option(Overview.state.obuf, "filetype", "overview")
         api.nvim_buf_set_option(Overview.state.obuf, "modifiable", false)
     end
 end
 
--- Get available height for floating sidebars.
-local function get_avail_height()
-    local has_tabline = vim.o.showtabline == 2 or (vim.o.showtabline == 1 and #api.nvim_list_tabpages() > 1)
-    local has_statusline = vim.o.laststatus > 0
-    -- NOTE: The last -2 here is for the border.
-    return vim.o.lines - vim.o.cmdheight - (has_tabline and 1 or 0) - (has_statusline and 1 or 0) - 2
+-- Refresh existing TOC or close if corrupted/invalid.
+function Overview.refresh()
+    if api.nvim_win_is_valid(Overview.state.owin) then
+        vim.schedule(draw)
+    else
+        vim.schedule(Overview.close) -- Clean up TOC window/buffer, augroup, etc.
+    end
 end
 
--- Create autocommands and augroup.
-local function create_autocommands()
-    augroup = api.nvim_create_augroup(Overview.config.augroup, {})
-    local au = function(event, pattern, callback, desc)
-        api.nvim_create_autocmd(
-            event, { group = Overview.config.augroup, pattern = pattern, callback = callback, desc = desc }
-        )
-    end
-    au({ "BufWritePost", "TextChanged" }, "*", Overview.refresh, "[overview.nvim] Refresh TOC contents")
-    au(
-        "VimResized", "*",
-        vim.schedule_wrap(function()
-            if api.nvim_win_is_valid(Overview.state.owin) then
-                api.nvim_win_set_height(Overview.state.owin, get_avail_height())
-            end
-        end),
-        "[overview.nvim] Resize TOC window"
-    )
-    au("BufEnter", "*", Overview.swap, "[overview.nvim] Swap TOC source if possible")
-    au("CursorHold", "*", Overview.refresh, "[overview.nvim] Refresh TOC using current source")
-    if Overview.config.remove_default_bindings then
-        au("FileType", "man,help", function() api.nvim_buf_del_keymap(0, "n", "gO") end)
+-- Swap TOC source to current buffer, if supported.
+function Overview.swap()
+    local parser = get_parser()
+    if vim.o.filetype ~= "overview" and api.nvim_win_is_valid(Overview.state.owin) and parser ~= nil then
+        Overview.state.parser = parser
+        vim.schedule(function() Overview.state.sbuf = api.nvim_win_get_buf(0) end)
+        Overview.refresh()
     end
 end
 
 -- Delete autocommands and augroup.
-local function delete_autocommands() api.nvim_del_augroup_by_name(Overview.config.augroup) end
+local function delete_autocommands()
+    if Overview.state.augroup ~= nil then
+        api.nvim_del_augroup_by_name(Overview.config.augroup)
+    end
+end
+
+local function au(event, buf, pattern, callback, desc, once)
+    -- NOTE: Can't use buf and pattern, must set one to nil.
+    return api.nvim_create_autocmd(
+        event,
+        {
+            buffer = buf,
+            pattern = pattern,
+            group = Overview.config.augroup,
+            callback = callback,
+            desc = desc,
+            once = once
+        }
+    )
+end
+
+-- Create autocommands and augroup.
+local function create_autocommands()
+    Overview.state.augroup = api.nvim_create_augroup(Overview.config.augroup, {})
+    -- Every (re)draw of the TOC must trigger filetype=overview.
+    au("FileType", nil, "overview", function(ft_ev)
+        -- Prevent putting any other buffers in the TOC window.
+        -- This makes :b[n|N]ext, :bprevious and :b# equivalent to Overview.focus().
+        au("BufWinLeave", ft_ev.buf, nil, vim.schedule_wrap(function()
+            if api.nvim_win_is_valid(Overview.state.owin) then
+                api.nvim_set_current_buf(ft_ev.buf)
+                Overview.focus()
+            end
+        end))
+        -- Watch for changes in source buffer.
+        au({ "BufWritePost", "TextChanged" }, Overview.state.sbuf, nil, Overview.refresh,
+            "[overview.nvim] Refresh TOC contents")
+        au( -- Handle VimResized.
+            "VimResized", Overview.state.obuf, nil,
+            vim.schedule_wrap(function()
+                if api.nvim_win_is_valid(Overview.state.owin) then
+                    api.nvim_win_set_height(Overview.state.owin, get_avail_height())
+                end
+            end),
+            "[overview.nvim] Resize TOC window"
+        )
+    end, nil, true) -- last arg true, otherwise infinite loop (set ft=overview, nvim_set_current_buf)
+    au("BufEnter", nil, "*.*", Overview.swap, "[overview.nvim] Swap TOC source if possible")
+    if Overview.config.remove_default_bindings then
+        au("FileType", nil, "man,help", function() api.nvim_buf_del_keymap(0, "n", "gO") end,
+            "[overview.nvim] Remove default gO mapping")
+    end
+end
 
 -- Create new TOC sidebar window or focus existing one.
 local function create_sidebar(buf, win)
@@ -240,8 +288,6 @@ local function create_sidebar(buf, win)
     if not api.nvim_buf_is_valid(buf) then
         buf = api.nvim_create_buf(false, true)
     end
-    api.nvim_buf_set_option(buf, "buftype", "nofile")
-    api.nvim_buf_set_option(buf, "filetype", "overview")
     if not api.nvim_win_is_valid(win) then
         win = api.nvim_open_win(buf, true, {
             border = { { " ", "NormalFloat" }, },
@@ -277,11 +323,13 @@ function Overview.focus()
     if not api.nvim_win_is_valid(Overview.state.owin) then return end
     if vim.fn.win_getid() == Overview.state.owin then
         local win = vim.fn.bufwinid(api.nvim_buf_get_name(Overview.state.sbuf))
-        -- the source buffer should not just be valid but also visible if we are trying to focus it
-        if Overview.state.sbuf >= 0 and win >= 0 then
-            api.nvim_set_current_win(win)
+        if (
+                Overview.state.sbuf >= 0 and api.nvim_buf_is_valid(Overview.state.sbuf)
+                and win >= 0 and api.nvim_win_is_valid(win)
+            ) then
+            vim.schedule(function() api.nvim_set_current_win(win) end)
         else
-            Overview.close()
+            vim.schedule(Overview.close)
         end
     else
         api.nvim_set_current_win(Overview.state.owin)
@@ -307,16 +355,6 @@ function Overview.open()
     end
 end
 
--- Swap TOC source to current buffer, if supported.
-function Overview.swap()
-    local parser = get_parser()
-    if api.nvim_win_is_valid(Overview.state.owin) and parser ~= nil then
-        Overview.state.parser = parser
-        Overview.state.sbuf = api.nvim_win_get_buf(0)
-        Overview.refresh()
-    end
-end
-
 -- Close possibly existing TOC sidebar.
 function Overview.close()
     if api.nvim_win_is_valid(Overview.state.owin) then
@@ -325,29 +363,12 @@ function Overview.close()
     if api.nvim_buf_is_valid(Overview.state.obuf) then
         api.nvim_buf_delete(Overview.state.obuf, { force = true })
     end
-end
-
--- Refresh existing TOC or close if corrupted/invalid.
-function Overview.refresh()
-    if api.nvim_win_is_valid(Overview.state.owin) and api.nvim_buf_is_valid(Overview.state.obuf) then
-        draw()
-    else
-        vim.schedule(Overview.close) -- Clean up TOC window/buffer, augroup, etc.
-    end
-end
-
--- Reset TOC window to reload config and autocommands.
-function Overview.reset()
-    Overview.close()
     delete_autocommands()
-    Overview.open()
-    create_autocommands()
 end
 
 -- Setup function to allow and validate user configuration.
 function Overview.setup(config)
     Overview.close()
-    delete_autocommands()
     for k, v in pairs(config) do
         if type(v) == "table" then
             for _k, _v in pairs(v) do
@@ -361,5 +382,7 @@ function Overview.setup(config)
     return Overview
 end
 
-create_autocommands()
-return Overview
+-- Deprecated alias.
+Overview.reset = Overview.setup
+
+return Overview.setup {}
