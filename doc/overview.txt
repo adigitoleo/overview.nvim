@@ -176,8 +176,9 @@ key sequence to be used for e.g. |Overview.toggle|. It is `true` by default.
 ==============================================================================
 FUNCTIONS				*overview-functions* *overview-api*
 
-This plugin exposes a few functions to the NeoVim Lua namespace which can be
-called directly or used in key mappings. They are listed in the table below.
+This plugin exposes a few functions via the `require("overview")` Lua namespace
+which can be called directly or used in key mappings. They are listed in the
+table below.
 
 	function~	description~
 	----------------------------------------------------------------------
@@ -188,17 +189,13 @@ called directly or used in key mappings. They are listed in the table below.
 	`open()`	open a new table of contents display for the current
 			buffer if the filetype is supported
 	`close()`	close any existing table of contents sidebar
-	`reset()`	reset the table of contents window and autocommands
-			after reloading the configuration
 
 
 ==============================================================================
 BUGS							*overview-bugs*
 
-The symbols list for code files is still experimental, and has some issues.
+The symbols list for code files is still experimental, and has some issues:
 `open()` fails to populate the list until the user focuses back to the code
-buffer; LSP-populated sidebars also do not respond to `swap()` immediately and
-require a subsequent `refresh()` (which is triggered by `CursorHold` at the
-moment as a workaround).
+buffer; LSP-populated sidebars also do not respond to `swap()` immediately.
 
 vim:tw=78:ts=8:noet:ft=help:norl:
