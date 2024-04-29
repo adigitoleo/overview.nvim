@@ -246,7 +246,7 @@ end
 
 -- Create autocommands and augroup.
 local function create_autocommands()
-    Overview.state.augroup = api.nvim_create_augroup(Overview.config.augroup, {})
+    api.nvim_create_augroup(Overview.config.augroup, {})
     -- Every (re)draw of the TOC must trigger filetype=overview.
     au("FileType", nil, "overview", function(ft_ev)
         -- Prevent putting any other buffers in the TOC window.
@@ -353,6 +353,7 @@ function Overview.open()
         api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<Cr>]], [[<Cmd>Jump<Cr>]], opts)
         api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<LeftRelease>]], [[<Cmd>Jump<Cr>]], opts)
     end
+    create_autocommands()
 end
 
 -- Close possibly existing TOC sidebar.
@@ -381,8 +382,5 @@ function Overview.setup(config)
     create_autocommands()
     return Overview
 end
-
--- Deprecated alias.
-Overview.reset = Overview.setup
 
 return Overview.setup {}
