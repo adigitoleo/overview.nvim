@@ -353,7 +353,6 @@ function Overview.open()
         api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<Cr>]], [[<Cmd>Jump<Cr>]], opts)
         api.nvim_buf_set_keymap(Overview.state.obuf, "n", [[<LeftRelease>]], [[<Cmd>Jump<Cr>]], opts)
     end
-    create_autocommands()
 end
 
 -- Close possibly existing TOC sidebar.
@@ -364,11 +363,11 @@ function Overview.close()
     if api.nvim_buf_is_valid(Overview.state.obuf) then
         api.nvim_buf_delete(Overview.state.obuf, { force = true })
     end
-    delete_autocommands()
 end
 
 -- Setup function to allow and validate user configuration.
 function Overview.setup(config)
+    delete_autocommands()
     Overview.close()
     for k, v in pairs(config) do
         if type(v) == "table" then
