@@ -1,4 +1,4 @@
-# overview.nvim
+# =: overview.nvim
 
 View and navigate a table of contents for markup files.
 
