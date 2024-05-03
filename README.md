@@ -36,9 +36,9 @@ can load packages if they are added to your 'packpath'.
 ```lua
 -- Set up key bindings to toggle/focus the TOC sidebar.
 overview = require("overview.nvim")
-if overview then
-    bindkey("n", "gO", overview.toggle, { desc = "Toggle Overview sidebar for current buffer" })
-    bindkey("n", "go", overview.focus, { desc = "Toggle focus between Overview sidebar and source buffer" })
+if overview ~= nil then
+    vim.keymap.set("n", "gO", overview.toggle, { desc = "Toggle Overview sidebar for current buffer" })
+    vim.keymap.set("n", "go", overview.focus, { desc = "Toggle focus between Overview sidebar and source buffer" })
 end
 ```
 
